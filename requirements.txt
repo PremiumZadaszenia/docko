@@ -1,0 +1,5 @@
+# Przypięte wersje: PyMuPDF 2 wciąga onnxruntime, a OpenCV 5 psuje paczkę exe.
+pdf2docx==0.5.13
+PyMuPDF==1.28.2
+opencv-python-headless==4.14.0.94
+numpy==2.5.4
