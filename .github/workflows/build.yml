@@ -61,14 +61,30 @@ jobs:
             Get-ChildItem dist | Format-Table Name, Length
             throw "Brak dist/Docko.exe"
           }
-          & $exe --self-check
-          if ($LASTEXITCODE -ne 0) { throw "Samokontrola zakończona kodem $LASTEXITCODE" }
+
+          # Program okienkowy (--windowed) nie blokuje operatora & w PowerShellu.
+          function Invoke-Docko([string[]]$Argumenty) {
+            $psi = [System.Diagnostics.ProcessStartInfo]::new()
+            $psi.FileName = $exe
+            $psi.UseShellExecute = $false
+            foreach ($arg in $Argumenty) { [void]$psi.ArgumentList.Add($arg) }
+            $proc = [System.Diagnostics.Process]::Start($psi)
+            $proc.WaitForExit()
+            return $proc.ExitCode
+          }
+
+          $kod = Invoke-Docko @("--self-check")
+          if ($kod -ne 0) { throw "Samokontrola zakończona kodem $kod" }
 
           $pdf = Join-Path $env:RUNNER_TEMP "docko-smoke.pdf"
           $docx = Join-Path $env:RUNNER_TEMP "docko-smoke.docx"
           python -c "import fitz; d=fitz.open(); p=d.new_page(); p.insert_text((72, 72), 'Docko'); d.save(r'$pdf'); d.close()"
-          & $exe $pdf
-          if ($LASTEXITCODE -ne 0) { throw "Zamiana zakończona kodem $LASTEXITCODE" }
+          $kod = Invoke-Docko @($pdf)
+          if ($kod -ne 0) {
+            $log = Join-Path (Split-Path $exe) "Docko-blad.log"
+            if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log -Raw }
+            throw "Zamiana zakończona kodem $kod"
+          }
           if (-not (Test-Path -LiteralPath $docx)) { throw "Nie powstał plik DOCX" }
           $rozmiar = (Get-Item -LiteralPath $exe).Length
           if ($rozmiar -lt 15000000) { throw "Docko.exe jest podejrzanie mały: $rozmiar" }
