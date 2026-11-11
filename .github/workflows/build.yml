@@ -1,0 +1,96 @@
+name: Budowanie Docko
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: docko-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - name: Pobranie kodu
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Zależności
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt "pyinstaller==6.22.3"
+
+      - name: Test zamiany PDF
+        run: python -m unittest discover -s tests -v
+
+      - name: Budowanie Docko.exe
+        shell: cmd
+        run: >
+          pyinstaller --noconfirm --clean --noupx --onefile --windowed
+          --name Docko --icon docko.ico --add-data "docko.ico;."
+          --hidden-import tkinter --collect-submodules pdf2docx
+          --collect-all pymupdf --collect-all cv2
+          --hidden-import fitz --collect-submodules fitz --hidden-import pymupdf
+          --hidden-import docx --hidden-import lxml --hidden-import fontTools
+          --runtime-hook packaging/rthook_stdio.py
+          docko.py
+
+      - name: Test zamrożonego programu
+        shell: pwsh
+        run: |
+          $exe = Join-Path (Resolve-Path "dist").Path "Docko.exe"
+          if (-not (Test-Path -LiteralPath $exe)) {
+            Get-ChildItem dist | Format-Table Name, Length
+            throw "Brak dist/Docko.exe"
+          }
+          & $exe --self-check
+          if ($LASTEXITCODE -ne 0) { throw "Samokontrola zakończona kodem $LASTEXITCODE" }
+
+          $pdf = Join-Path $env:RUNNER_TEMP "docko-smoke.pdf"
+          $docx = Join-Path $env:RUNNER_TEMP "docko-smoke.docx"
+          python -c "import fitz; d=fitz.open(); p=d.new_page(); p.insert_text((72, 72), 'Docko'); d.save(r'$pdf'); d.close()"
+          & $exe $pdf
+          if ($LASTEXITCODE -ne 0) { throw "Zamiana zakończona kodem $LASTEXITCODE" }
+          if (-not (Test-Path -LiteralPath $docx)) { throw "Nie powstał plik DOCX" }
+          $rozmiar = (Get-Item -LiteralPath $exe).Length
+          if ($rozmiar -lt 15000000) { throw "Docko.exe jest podejrzanie mały: $rozmiar" }
+          Write-Host "Docko.exe $rozmiar bajtów"
+
+      - name: Artefakt Docko.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Docko.exe
+          path: dist/Docko.exe
+          if-no-files-found: error
+
+      - name: Wydanie GitHub
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -f dist/Docko.exe
+          gh release create "$GITHUB_REF_NAME" "dist/Docko.exe" \
+            --title "Docko ${GITHUB_REF_NAME}" \
+            --notes-file packaging/notatki-wydania.md
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | tee asset-names.txt
+          grep -qx 'Docko.exe' asset-names.txt

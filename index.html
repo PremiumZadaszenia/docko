@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docko — darmowy konwerter PDF na Word</title>
+  <meta name="description" content="Docko zamienia PDF na dokument Word (.docx). Jeden plik Docko.exe dla Windows, bez instalacji. Działa offline — pliki nie opuszczają komputera.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='3' width='16' height='22' rx='1.5' fill='%23fff' stroke='%2316324f' stroke-width='2'/%3E%3Cpath d='M16 3v6h6' fill='%230c6b4d'/%3E%3Cpath d='M9 14h10M9 18h10M9 22h6' stroke='%2316324f' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --papier: #f3efe6;
+      --kartka: #fffdf8;
+      --atrament: #1b2430;
+      --granat: #16324f;
+      --zielen: #0c6b4d;
+      --zielen-ciemny: #09543c;
+      --linia: #e3dacb;
+      --przygaszony: #5c6670;
+      --ostrzezenie-tlo: #fff4d6;
+      --ostrzezenie-linia: #e2b657;
+      --ostrzezenie-tekst: #3f2e08;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--papier);
+      color: var(--atrament);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    a { color: var(--granat); }
+
+    a:focus-visible,
+    .pobierz:focus-visible {
+      outline: 3px solid var(--zielen);
+      outline-offset: 3px;
+    }
+
+    .pasek {
+      background: var(--granat);
+      color: #f4efe4;
+    }
+
+    .pasek-srodek,
+    main {
+      width: min(740px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .pasek-srodek {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      padding: 14px 0;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .pasek strong { font-size: 16px; letter-spacing: 0.04em; }
+
+    .pasek a { color: #f4efe4; }
+
+    main { padding: 36px 0 64px; }
+
+    .tytul {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .tytul h1 {
+      margin: 0;
+      font-size: clamp(40px, 8vw, 56px);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .lead {
+      margin: 0 0 28px;
+      font-size: 19px;
+      max-width: 38em;
+    }
+
+    .pobierz {
+      display: inline-block;
+      background: var(--zielen);
+      color: #fff;
+      text-decoration: none;
+      font-size: 20px;
+      font-weight: 600;
+      padding: 16px 28px;
+      border-radius: 8px;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .pobierz:hover { background: var(--zielen-ciemny); }
+
+    .meta {
+      margin: 12px 0 0;
+      color: var(--przygaszony);
+      font-size: 15px;
+    }
+
+    .meta a { color: var(--przygaszony); }
+
+    section {
+      margin-top: 36px;
+      background: var(--kartka);
+      border: 1px solid var(--linia);
+      border-radius: 12px;
+      padding: 22px 22px 8px;
+    }
+
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    ol, ul { margin: 0 0 18px; padding-left: 1.2em; }
+
+    li { margin: 8px 0; }
+
+    li strong { font-weight: 650; }
+
+    .ostrzezenie {
+      background: var(--ostrzezenie-tlo);
+      border-color: var(--ostrzezenie-linia);
+      color: var(--ostrzezenie-tekst);
+    }
+
+    .ostrzezenie h2 { color: var(--ostrzezenie-tekst); }
+
+    .kroki {
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 18px;
+    }
+
+    .kroki li {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      margin: 10px 0;
+    }
+
+    .kroki span {
+      flex: 0 0 auto;
+      width: 1.7em;
+      height: 1.7em;
+      border-radius: 50%;
+      background: var(--granat);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ostrzezenie .kroki span { background: #8a5a10; }
+
+    footer {
+      width: min(740px, calc(100% - 32px));
+      margin: 0 auto 40px;
+      color: var(--przygaszony);
+      font-size: 14px;
+    }
+
+    @media (max-width: 640px) {
+      body { font-size: 16.5px; }
+
+      .pasek-srodek { flex-direction: column; gap: 4px; }
+
+      .pobierz {
+        display: block;
+        text-align: center;
+      }
+
+      section { padding: 18px 16px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="pasek">
+    <div class="pasek-srodek">
+      <strong>Docko</strong>
+      <span>Darmowy · Windows · bez instalacji</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="tytul">
+      <svg width="52" height="60" viewBox="0 0 52 60" aria-hidden="true">
+        <rect x="4" y="4" width="34" height="48" rx="3" fill="#fff" stroke="#16324f" stroke-width="2.5"/>
+        <path d="M26 4v12h12" fill="#0c6b4d"/>
+        <path d="M12 28h20M12 36h20M12 44h12" stroke="#16324f" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <h1>Docko</h1>
+    </div>
+    <p class="lead">Zamienia plik PDF na dokument Word (<code>.docx</code>). Pobierasz jeden plik <code>Docko.exe</code>, uruchamiasz go i nic więcej nie instalujesz — Pythona też nie.</p>
+
+    <a class="pobierz" href="https://github.com/PremiumZadaszenia/docko/releases/latest/download/Docko.exe">Pobierz Docko.exe</a>
+    <p class="meta">Windows 10 i 11 · jeden plik · działa offline<br>
+      <a href="https://github.com/PremiumZadaszenia/docko/releases">Wszystkie wydania</a>
+      ·
+      <a href="https://github.com/PremiumZadaszenia/docko">Kod źródłowy</a>
+    </p>
+
+    <section>
+      <h2>Jak zamienić PDF na Word</h2>
+      <ol class="kroki">
+        <li><span>1</span><div>Pobierz <strong>Docko.exe</strong> i otwórz go.</div></li>
+        <li><span>2</span><div>Kliknij <strong>Wybierz PDF</strong> i wskaż jeden plik albo kilka naraz.</div></li>
+        <li><span>3</span><div>Obok każdego PDF-a pojawi się dokument <strong>.docx</strong> o tej samej nazwie.</div></li>
+      </ol>
+      <p>Na przykład z <code>umowa.pdf</code> powstanie <code>umowa.docx</code> w tym samym folderze. Możesz go otworzyć w Wordzie albo innym edytorze dokumentów.</p>
+    </section>
+
+    <section class="ostrzezenie" id="smartscreen">
+      <h2>Ostrzeżenie Windows (SmartScreen)</h2>
+      <p>Docko.exe <strong>nie jest podpisany cyfrowo</strong>. Przy pierwszym uruchomieniu Windows często blokuje taki plik i pokazuje niebieski komunikat:</p>
+      <p><strong>„System Windows ochronił ten komputer”</strong></p>
+      <p>To ostrzeżenie filtra SmartScreen, a nie informacja, że plik jest wirusem. Żeby uruchomić program:</p>
+      <ol class="kroki">
+        <li><span>1</span><div>Kliknij <strong>„Więcej informacji”</strong>. Przycisk uruchomienia jest schowany, dopóki tego nie zrobisz.</div></li>
+        <li><span>2</span><div>Kliknij <strong>„Uruchom mimo to”</strong>.</div></li>
+      </ol>
+      <p>Napis na oknie bywa też „Microsoft Defender SmartScreen”. Kroki są te same: najpierw <strong>Więcej informacji</strong>, potem <strong>Uruchom mimo to</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Pliki zostają u Ciebie</h2>
+      <p>Zamiana odbywa się w całości na Twoim komputerze. Docko nie wysyła PDF-ów ani dokumentów Word do internetu. Program działa po odłączeniu sieci — połączenie jest potrzebne tylko do pobrania <code>Docko.exe</code>.</p>
+    </section>
+
+    <section>
+      <h2>Czego się spodziewać</h2>
+      <ul>
+        <li>Jeśli w PDF-ie da się zaznaczyć tekst myszką, Docko przeniesie go do Worda jako tekst do edycji.</li>
+        <li>Skan, czyli samo zdjęcie strony, nie zamieni się w edytowalny tekst. Ten program nie rozpoznaje pisma ze zdjęć (nie ma OCR). Strona trafi do dokumentu jako obraz.</li>
+        <li>Tabele, kilka kolumn i przypisy czasem wymagają poprawki w Wordzie.</li>
+        <li>Wynik to zawsze <code>.docx</code> (Word 2007 i nowszy). Stary format <code>.doc</code> nie jest zapisywany.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Docko jest darmowy. <a href="https://github.com/PremiumZadaszenia/docko">Projekt na GitHubie</a> · <a href="https://github.com/PremiumZadaszenia/docko/releases/latest/download/Docko.exe">pobierz Docko.exe</a></p>
+  </footer>
+</body>
+</html>
