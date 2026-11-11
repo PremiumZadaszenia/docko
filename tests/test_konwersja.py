@@ -116,7 +116,10 @@ class TestDocko(unittest.TestCase):
 
             wynik = docko.konwertuj_pdf(pdf)
             self.assertEqual(wynik.suffix, ".docx")
-            self.assertEqual(wynik.parent, pdf.parent)
+            self.assertEqual(wynik.name, pdf.with_suffix(".docx").name)
+            # Windows potrafi zwrócić tę samą teczkę raz jako długą ścieżkę,
+            # a raz jako skróconą (RUNNER~1). samefile porównuje sam folder.
+            self.assertTrue(wynik.parent.samefile(pdf.parent))
             self.assertTrue(wynik.is_file())
             self.assertGreater(wynik.stat().st_size, 0)
             self.assertEqual(wynik.read_bytes()[:2], b"PK")
